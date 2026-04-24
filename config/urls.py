@@ -23,5 +23,6 @@ urlpatterns = [
     path("api/insights/", InsightsAPIView.as_view(), name="insights"),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Render deployment has no separate media server by default.
+# Keep media files accessible directly from Django.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
