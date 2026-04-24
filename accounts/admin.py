@@ -13,6 +13,13 @@ class ProfileInline(admin.StackedInline):
 class UserAdmin(BaseUserAdmin):
     inlines = (ProfileInline,)
 
+    def get_inline_instances(self, request, obj=None):
+        # On "add user" page, Profile is created by signal.
+        # Showing inline there can trigger duplicate profile creation (500).
+        if obj is None:
+            return []
+        return super().get_inline_instances(request, obj)
+
 
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
