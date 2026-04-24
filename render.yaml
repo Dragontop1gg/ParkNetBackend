@@ -1,0 +1,34 @@
+# Blueprint лежит в backend/ — в Render: New Blueprint → укажи путь backend/render.yaml
+# Деплой только API; фронт (телефон) крутится отдельно.
+# Monorepo (в репо есть папка backend/): оставь rootDir: backend.
+# Если репозиторий УЖЕ только содержимое backend (manage.py в корне репо) — удали строку rootDir ниже.
+
+databases:
+  - name: parknet-db
+    databaseName: parknet
+    user: parknet
+    plan: free
+
+services:
+  - type: web
+    name: parknet-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/parks/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: parknet-db
+          property: connectionString
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com,localhost,127.0.0.1"
