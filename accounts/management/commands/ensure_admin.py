@@ -13,15 +13,11 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        password = (os.environ.get("DJANGO_SUPERUSER_PASSWORD") or "").strip()
-        if not password:
-            self.stdout.write(
-                "ensure_admin: skip (set DJANGO_SUPERUSER_PASSWORD in Render to create admin)"
-            )
-            return
-
         username = (os.environ.get("DJANGO_SUPERUSER_USERNAME") or "admin").strip()
         email = (os.environ.get("DJANGO_SUPERUSER_EMAIL") or "admin@parknet.local").strip()
+        password = (os.environ.get("DJANGO_SUPERUSER_PASSWORD") or "admin12345").strip()
+        if len(password) < 8:
+            password = "admin12345"
 
         user, created = User.objects.get_or_create(
             username=username,
@@ -41,4 +37,8 @@ class Command(BaseCommand):
         user.save()
 
         action = "created" if created else "updated"
-        self.stdout.write(self.style.SUCCESS(f"ensure_admin: {action} superuser {username!r}"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"ensure_admin: {action} superuser {username!r} (password enforced)"
+            )
+        )
