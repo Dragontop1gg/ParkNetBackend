@@ -1,7 +1,9 @@
-# Blueprint лежит в backend/ — в Render: New Blueprint → укажи путь backend/render.yaml
-# Деплой только API; фронт (телефон) крутится отдельно.
-# Monorepo (в репо есть папка backend/): оставь rootDir: backend.
-# Если репозиторий УЖЕ только содержимое backend (manage.py в корне репо) — удали строку rootDir ниже.
+# Репозиторий только с Django (manage.py в корне репо, как ParkNetBackend):
+#   положи этот файл в КОРЕНЬ репозитория как render.yaml
+#   в Render: Blueprint → путь render.yaml, поле Root Directory оставь ПУСТЫМ.
+#
+# Если когда-нибудь деплоишь из монорепо ParkNet (рядом папки mobile и backend):
+#   добавь сюда строку:  rootDir: backend
 
 databases:
   - name: parknet-db
@@ -15,7 +17,6 @@ services:
     runtime: python
     plan: free
     region: frankfurt
-    rootDir: backend
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
     startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /api/parks/
