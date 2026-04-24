@@ -7,7 +7,10 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = "Create superuser from env if DJANGO_SUPERUSER_PASSWORD is set and user missing (idempotent)."
+    help = (
+        "Create/update superuser from env if DJANGO_SUPERUSER_PASSWORD is set "
+        "(safe for free Render where Shell is unavailable)."
+    )
 
     def handle(self, *args, **options):
         password = (os.environ.get("DJANGO_SUPERUSER_PASSWORD") or "").strip()
@@ -20,9 +23,22 @@ class Command(BaseCommand):
         username = (os.environ.get("DJANGO_SUPERUSER_USERNAME") or "admin").strip()
         email = (os.environ.get("DJANGO_SUPERUSER_EMAIL") or "admin@parknet.local").strip()
 
-        if User.objects.filter(username=username).exists():
-            self.stdout.write(f"ensure_admin: user {username!r} already exists")
-            return
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={
+                "email": email,
+                "is_staff": True,
+                "is_superuser": True,
+                "is_active": True,
+            },
+        )
+        # For demo deployments, always enforce admin flags/password from env.
+        user.email = email
+        user.is_staff = True
+        user.is_superuser = True
+        user.is_active = True
+        user.set_password(password)
+        user.save()
 
-        User.objects.create_superuser(username, email, password)
-        self.stdout.write(self.style.SUCCESS(f"ensure_admin: created superuser {username!r}"))
+        action = "created" if created else "updated"
+        self.stdout.write(self.style.SUCCESS(f"ensure_admin: {action} superuser {username!r}"))
