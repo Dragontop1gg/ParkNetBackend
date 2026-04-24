@@ -16,5 +16,11 @@ def create_user_profile(sender, instance: User, created: bool, **kwargs) -> None
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance: User, **kwargs) -> None:
-    if hasattr(instance, "profile"):
-        instance.profile.save()
+    # Be resilient for users created before signals existed or partial data states.
+    profile, _ = Profile.objects.get_or_create(
+        user=instance,
+        defaults={"display_name": instance.first_name or instance.username},
+    )
+    if not profile.display_name:
+        profile.display_name = instance.first_name or instance.username
+    profile.save()
